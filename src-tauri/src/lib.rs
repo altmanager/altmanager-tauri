@@ -40,7 +40,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
-            let child = spawn_server(app.handle());
+            let child = spawn_server(&app.handle());
             app.manage(ServerProcess(Arc::new(Mutex::new(Some(child)))));
 
             let show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
@@ -49,8 +49,9 @@ pub fn run() {
 
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
+                .show_menu_on_left_click(true)
                 .menu(&menu)
-                .on_menu_event(|app, event| match event.id.as_ref() {
+                .on_menu_event(|app, event| match event.id.0.as_str() {
                     "show" => {
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.show();
@@ -97,13 +98,13 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
-                window.hide().unwrap();
+                window.hide().ok();
                 api.prevent_close();
             }
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app, event| {
+        .run(|_app_handle, event| {
             if let RunEvent::ExitRequested { api, .. } = event {
                 api.prevent_exit();
             }
