@@ -37,6 +37,7 @@ jobs:
           cache: npm
 
       - name: Get release version from tag
+        shell: bash
         run: |
           TAG=${{ github.event.release.tag_name }}
           echo "VERSION=${TAG#v}" >> $GITHUB_OUTPUT
