@@ -30,18 +30,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Set version from tag
-        shell: bash
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Get release version from tag
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          if [[ "$RUNNER_OS" == "macOS" ]]; then
-            sed -i '' "s/0\.0\.0-snapshot/${VERSION}/" src-tauri/Cargo.toml
-          else
-            sed -i "s/0\.0\.0-snapshot/${VERSION}/" src-tauri/Cargo.toml
-          fi
-          jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > tmp.json \
-            && mv tmp.json src-tauri/tauri.conf.json
-          npm version ${{ github.event.release.tag_name }} --git-tag-version=false
+          TAG=${{ github.event.release.tag_name }}
+          echo "VERSION=${TAG#v}" >> $GITHUB_OUTPUT
+        id: version
+
+      - name: Set Cargo.toml version
+        run: |
+          cargo install --force cargo-edit
+          cargo set-version ${{ steps.version.outputs.VERSION }} --manifest-path src-tauri/Cargo.toml
+
+      - name: Update tauri.conf.json
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const path = "src-tauri/tauri.conf.json";
+            const version = "${{ steps.version.outputs.VERSION }}";
+            const json = JSON.parse(fs.readFileSync(path, "utf8"));
+            json.version = version;
+            fs.writeFileSync(path, JSON.stringify(json, null, 2));
+
+      - name: Update npm package version
+        run: |
+          npm version ${{ steps.version.outputs.VERSION }} --git-tag-version=false
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -58,12 +77,6 @@ jobs:
             librsvg2-dev \
             patchelf \
             libfuse2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
 
       - name: Install dependencies
         run: npm ci
