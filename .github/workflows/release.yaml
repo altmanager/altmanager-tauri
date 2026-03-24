@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - platform: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.platform }}
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set version from tag
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            sed -i '' "s/0\.0\.0-snapshot/${VERSION}/" src-tauri/Cargo.toml
+          else
+            sed -i "s/0\.0\.0-snapshot/${VERSION}/" src-tauri/Cargo.toml
+          fi
+          jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > tmp.json \
+            && mv tmp.json src-tauri/tauri.conf.json
+          npm version ${{ github.event.release.tag_name }} --git-tag-version=false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libfuse2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate icons
+        run: npx tauri icon src-tauri/icons/icon.svg
+
+      - name: Download altmanager-web dist
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download \
+            --repo altmanager/altmanager-web \
+            --pattern "dist.zip" \
+            --dir .
+          unzip dist.zip
+
+      - name: Download altmanager-ws binary
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download \
+            --repo altmanager/altmanager-ws \
+            --pattern "altmanager-ws-${{ matrix.target }}*" \
+            --dir src-tauri/binaries/
+
+      - name: Mark binary executable
+        if: runner.os != 'Windows'
+        run: chmod +x src-tauri/binaries/altmanager-ws-${{ matrix.target }}
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ github.event.release.id }}
+          releaseDraft: false
+          prerelease: ${{ github.event.release.prerelease }}
+          target: ${{ matrix.target }}
+          args: --target ${{ matrix.target }}

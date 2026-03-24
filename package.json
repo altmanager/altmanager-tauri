@@ -1,0 +1,22 @@
+{
+  "name": "altmanager-tauri",
+  "version": "0.0.0-snapshot",
+  "description": "AltManager desktop app",
+  "homepage": "https://github.com/altmanager/altmanager-tauri#readme",
+  "bugs": {
+    "url": "https://github.com/altmanager/altmanager-tauri/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altmanager/altmanager-tauri.git"
+  },
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "tauri": "tauri",
+    "build": "npm run tauri -- build",
+    "dev": "npm run tauri -- dev"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.10.1"
+  }
+}

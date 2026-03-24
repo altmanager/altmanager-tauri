@@ -1,0 +1,54 @@
+{
+  "productName": "AltManager",
+  "version": "0.0.0-snapshot",
+  "identifier": "io.github.altmanager.tauri",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "AltManager",
+        "width": 900,
+        "height": 800,
+        "resizable": true
+      }
+    ],
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    },
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/altmanager/altmanager-tauri/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFGOUFGODc3ODhFNjZBM0EKUldRNmF1YUlkL2lhcnlLMUV3VThrRk53TWNlNHVwc0twTytNbDdNUzB1cC9OWlYwTG5ldXRhMGYK"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": [],
+    "externalBin": ["binaries/altmanager-ws"],
+    "linux": {
+      "deb": {
+        "depends": []
+      },
+      "rpm": {
+        "depends": []
+      }
+    }
+  }
+}

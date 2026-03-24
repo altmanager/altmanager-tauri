@@ -1,0 +1,27 @@
+{
+  "identifier": "default",
+  "description": "Default app capabilities for AltManager",
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "binaries/altmanager-ws",
+          "args": true,
+          "sidecar": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/altmanager-ws",
+          "args": true,
+          "sidecar": true
+        }
+      ]
+    }
+  ]
+}
