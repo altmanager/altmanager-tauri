@@ -54,7 +54,7 @@ jobs:
 
       - name: Update tauri.conf.json
         if: ${{ !(github.event.release.prerelease && runner.os == 'Windows') }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require("fs");
